@@ -13,3 +13,9 @@ using SafeTestsets: @safetestset
   bc = Broadcasted(+, (a, b))
   @test copy(bc) ≈ a + b ≈ map(map_function(bc), map_args(bc)...)
 end
+
+@time @safetestset "Aqua tests" begin
+  using Aqua: Aqua
+  using BroadcastMapConversion: BroadcastMapConversion
+  Aqua.test_all(BroadcastMapConversion)
+end
