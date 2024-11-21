@@ -7,6 +7,12 @@
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 [![Aqua](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
+This is a small package that provides a way to convert a `Broadcasted` object into a call to `map`.
+It contains a slightly generalized version of the logic used in [Strided.jl](https://github.com/Jutho/Strided.jl), as can be seen [here](https://github.com/Jutho/Strided.jl/blob/v2.0.4/src/broadcast.jl).
+
+The core idea is to capture non-`AbstractArray` objects, such as `Number`s, as these have to be repeated across the dimensions of the `Broadcasted` object.
+In `Strided.jl`, the logic is only used to capture non-`StridedView` objects, while here it is generalized to non-`AbstractArray` types.
+
 ## Installation
 
 ```julia
