@@ -25,6 +25,7 @@ function map_function(bc::Broadcasted)
   args = map_function_tuple(bc.args)
   return MapFunction(bc.f, args)
 end
+
 map_function_tuple(t::Tuple{}) = t
 map_function_tuple(t::Tuple) = (map_function(t[1]), map_function_tuple(Base.tail(t))...)
 map_function(a::WrappedScalarArgs) = a[]
@@ -45,4 +46,5 @@ function apply_tuple(t::Tuple, args)
   ttail, newargs = apply_tuple(Base.tail(t), newargs1)
   return (t1, ttail...), newargs
 end
+
 end
