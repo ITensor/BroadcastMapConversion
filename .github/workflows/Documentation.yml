@@ -16,5 +16,5 @@ concurrency:
 jobs:
   build-and-deploy-docs:
     name: "Documentation"
-    uses: "ITensor/JuliaActions/workflows/documentation.yml@main"
+    uses: "ITensor/JuliaActions/.github/workflows/Documentation.yml@main"
     secrets: "inherit"
