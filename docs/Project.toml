@@ -1,3 +1,6 @@
 [deps]
-Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 BroadcastMapConversion = "7726166c-068e-4473-bed7-0e8eb0255830"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+
+[compat]
+julia = "1.10"

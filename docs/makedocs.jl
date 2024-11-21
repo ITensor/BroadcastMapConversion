@@ -1,3 +1,6 @@
+using Pkg: Pkg
+Pkg.develop(; path=joinpath(@__DIR__, ".."))
+
 using BroadcastMapConversion
 using Documenter
 
@@ -14,7 +17,7 @@ makedocs(;
     edit_link="main",
     assets=String[],
   ),
-  pages=["Home" => "index.md"],
+  pages=["Home" => "index.md", "Lib" => "lib.md"],
 )
 
 deploydocs(; repo="github.com/ITensor/BroadcastMapConversion.jl", devbranch="main")

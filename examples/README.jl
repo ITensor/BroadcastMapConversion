@@ -1,3 +1,4 @@
+md"""
 # BroadcastMapConversion
 
 [![Docs][docs-img]][docs-url]
@@ -31,13 +32,7 @@ In `Strided.jl`, the logic is only used to capture non-`StridedView` objects, wh
 
 The package can be installed with the Julia package manager via its GitHub link.
 From the Julia REPL, you can run:
+"""
 
-````julia
 using Pkg: Pkg
 Pkg.add("https://github.com/ITensor/BroadcastMapConversion.jl")
-````
-
----
-
-*This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-
