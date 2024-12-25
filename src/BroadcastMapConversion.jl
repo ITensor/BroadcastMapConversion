@@ -73,7 +73,6 @@ function map_broadcast_to_mapped(bc::Broadcasted)
   return Mapped(bc.style, bc.f, bc.args, bc.axes)
 end
 
-mapped(bc::Broadcasted) = Mapped(bc)
 mapped(f, args...) = Mapped(broadcasted(f, args...))
 
 Base.similar(m::Mapped, elt::Type) = similar(Broadcasted(m), elt)

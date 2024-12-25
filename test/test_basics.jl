@@ -1,5 +1,5 @@
 using Base.Broadcast: broadcasted
-using BroadcastMapConversion: mapped
+using BroadcastMapConversion: Mapped, mapped
 using Test: @test, @testset
 
 @testset "BroadcastMapConversion (eltype=$elt)" for elt in (
@@ -12,7 +12,7 @@ using Test: @test, @testset
     (broadcasted(*, c, a), mapped(x -> c * x, a), c * a),
     (broadcasted(+, a, broadcasted(*, c, b)), mapped((x, y) -> x + c * y, a, b), a + c * b),
   )
-    m = mapped(bc)
+    m = Mapped(bc)
     @test copy(m) ≈ ref
     @test copy(m′) ≈ ref
     @test map(m.f, m.args...) ≈ ref

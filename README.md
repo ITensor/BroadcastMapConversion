@@ -33,12 +33,12 @@ julia> Pkg.add("BroadcastMapConversion")
 
 ````julia
 using Base.Broadcast: broadcasted
-using BroadcastMapConversion: mapped
+using BroadcastMapConversion: Mapped, mapped
 using Test: @test
 
 a = randn(2, 2)
 bc = broadcasted(*, 2, a)
-m = mapped(bc)
+m = Mapped(bc)
 m′ = mapped(x -> 2x, a)
 @test copy(m) ≈ map(m.f, m.args...)
 @test copy(m) ≈ copy(m′)
