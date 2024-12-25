@@ -77,6 +77,7 @@ mapped(bc::Broadcasted) = Mapped(bc)
 mapped(f, args...) = Mapped(broadcasted(f, args...))
 
 Base.similar(m::Mapped, elt::Type) = similar(Broadcasted(m), elt)
+Base.similar(m::Mapped, elt::Type, ax::Tuple) = similar(Broadcasted(m), elt, ax)
 Base.axes(m::Mapped) = axes(Broadcasted(m))
 # Equivalent to:
 # map(m.f, m.args...)
