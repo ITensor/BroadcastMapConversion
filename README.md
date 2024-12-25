@@ -32,10 +32,20 @@ julia> Pkg.add("BroadcastMapConversion")
 ## Examples
 
 ````julia
-using BroadcastMapConversion: BroadcastMapConversion
-````
+using Base.Broadcast: broadcasted
+using BroadcastMapConversion: mapped
+using Test: @test
 
-Examples go here.
+a = randn(2, 2)
+bc = broadcasted(*, 2, a)
+m = mapped(bc)
+m′ = mapped(x -> 2x, a)
+@test copy(m) ≈ map(m.f, m.args...)
+@test copy(m) ≈ copy(m′)
+@test copy(m) ≈ copy(bc)
+@test axes(m) == axes(bc)
+@test copyto!(similar(m, Float64), m) ≈ copyto!(similar(bc, Float64), bc)
+````
 
 ---
 

@@ -1,13 +1,25 @@
-using Base.Broadcast: Broadcasted
-using BroadcastMapConversion: map_function, map_args
+using Base.Broadcast: broadcasted
+using BroadcastMapConversion: mapped
 using Test: @test, @testset
 
-@testset "BroadcastMapConversion" begin
-  c = 2.2
-  a = randn(2, 3)
-  b = randn(2, 3)
-  bc = Broadcasted(*, (c, a))
-  @test copy(bc) ≈ c * a ≈ map(map_function(bc), map_args(bc)...)
-  bc = Broadcasted(+, (a, b))
-  @test copy(bc) ≈ a + b ≈ map(map_function(bc), map_args(bc)...)
+@testset "BroadcastMapConversion (eltype=$elt)" for elt in (
+  Float32, Float64, Complex{Float32}, Complex{Float64}
+)
+  c = elt(2.2)
+  a = randn(elt, 2, 3)
+  b = randn(elt, 2, 3)
+  for (bc, m′, ref) in (
+    (broadcasted(*, c, a), mapped(x -> c * x, a), c * a),
+    (broadcasted(+, a, broadcasted(*, c, b)), mapped((x, y) -> x + c * y, a, b), a + c * b),
+  )
+    m = mapped(bc)
+    @test copy(m) ≈ ref
+    @test copy(m′) ≈ ref
+    @test map(m.f, m.args...) ≈ ref
+    @test map(m′.f, m′.args...) ≈ ref
+    @test axes(m) == axes(bc)
+    @test axes(m′) == axes(bc)
+    @test copyto!(similar(m, elt), m) ≈ ref
+    @test copyto!(similar(m′, elt), m) ≈ ref
+  end
 end
