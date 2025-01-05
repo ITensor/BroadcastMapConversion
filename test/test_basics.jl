@@ -1,6 +1,6 @@
 using Base.Broadcast: broadcasted
-using BroadcastMapConversion: Mapped, mapped
-using Test: @test, @testset
+using BroadcastMapConversion: Mapped, is_map_expr, mapped
+using Test: @inferred, @test, @testset
 
 @testset "BroadcastMapConversion (eltype=$elt)" for elt in (
   Float32, Float64, Complex{Float32}, Complex{Float64}
@@ -22,4 +22,9 @@ using Test: @test, @testset
     @test copyto!(similar(m, elt), m) ≈ ref
     @test copyto!(similar(m′, elt), m) ≈ ref
   end
+
+  @test @inferred is_map_expr(
+    Broadcast.broadcasted(+, [2], Broadcast.broadcasted(sin, [2]))
+  )
+  @test @inferred !is_map_expr(Broadcast.broadcasted(+, 2, Broadcast.broadcasted(sin, [2])))
 end

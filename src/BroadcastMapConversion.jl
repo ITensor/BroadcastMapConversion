@@ -10,12 +10,18 @@ const WrappedScalarArgs = Union{AbstractArray{<:Any,0},Ref{<:Any}}
 
 # Get the arguments of the map expression that
 # is equivalent to the broadcast expression.
-function map_args(bc::Broadcasted, rest...)
-  return (map_args(bc.args...)..., map_args(rest...)...)
+function map_args(bc::Broadcasted)
+  return map_args_flatten(bc)
 end
-map_args(a::AbstractArray, rest...) = (a, map_args(rest...)...)
-map_args(a, rest...) = map_args(rest...)
-map_args() = ()
+
+function map_args_flatten(bc::Broadcasted, args_rest...)
+  return (map_args_flatten(bc.args...)..., map_args_flatten(args_rest...)...)
+end
+function map_args_flatten(arg1::AbstractArray, args_rest...)
+  return (arg1, map_args_flatten(args_rest...)...)
+end
+map_args_flatten(arg1, args_rest...) = map_args_flatten(args_rest...)
+map_args_flatten() = ()
 
 struct MapFunction{F,Args<:Tuple} <: Function
   f::F
@@ -27,14 +33,18 @@ struct Arg end
 # is equivalent to the broadcast expression.
 # Returns a `MapFunction`.
 function map_function(bc::Broadcasted)
-  args = map_function_tuple(bc.args)
-  return MapFunction(bc.f, args)
+  return map_function_arg(bc)
 end
-map_function_tuple(t::Tuple{}) = t
-map_function_tuple(t::Tuple) = (map_function(t[1]), map_function_tuple(Base.tail(t))...)
-map_function(a::WrappedScalarArgs) = a[]
-map_function(a::AbstractArray) = Arg()
-map_function(a) = a
+map_function_args(args::Tuple{}) = args
+function map_function_args(args::Tuple)
+  return (map_function_arg(args[1]), map_function_args(Base.tail(args))...)
+end
+function map_function_arg(bc::Broadcasted)
+  return MapFunction(bc.f, map_function_args(bc.args))
+end
+map_function_arg(a::WrappedScalarArgs) = a[]
+map_function_arg(a::AbstractArray) = Arg()
+map_function_arg(a) = a
 
 # Evaluate MapFunction
 (f::MapFunction)(args...) = apply(f, args)[1]
@@ -51,6 +61,21 @@ function apply_tuple(t::Tuple, args)
   return (t1, ttail...), newargs
 end
 
+is_map_expr_or_arg(arg::AbstractArray) = true
+is_map_expr_or_arg(arg::Any) = false
+function is_map_expr_or_arg(bc::Broadcasted)
+  return all(is_map_expr_or_arg, bc.args)
+end
+function is_map_expr(bc::Broadcasted)
+  return is_map_expr_or_arg(bc)
+end
+
+abstract type ExprStyle end
+struct MapExpr <: ExprStyle end
+struct NotMapExpr <: ExprStyle end
+
+ExprStyle(bc::Broadcasted) = is_map_expr(bc) ? MapExpr() : NotMapExpr()
+
 abstract type AbstractMapped <: Base.AbstractBroadcasted end
 
 struct Mapped{Style<:Union{Nothing,BroadcastStyle},Axes,F,Args<:Tuple} <: AbstractMapped
@@ -60,18 +85,27 @@ struct Mapped{Style<:Union{Nothing,BroadcastStyle},Axes,F,Args<:Tuple} <: Abstra
   axes::Axes
 end
 
+# SimpleTraits.trait(Tr{X})
+
 function Mapped(bc::Broadcasted)
+  return Mapped(ExprStyle(bc), bc)
+end
+function Mapped(::NotMapExpr, bc::Broadcasted)
   return Mapped(bc.style, map_function(bc), map_args(bc), bc.axes)
 end
+function Mapped(::MapExpr, bc::Broadcasted)
+  return Mapped(bc.style, bc.f, bc.args, bc.axes)
+end
+
 function Broadcast.Broadcasted(m::Mapped)
   return Broadcasted(m.style, m.f, m.args, m.axes)
 end
 
-# Convert `Broadcasted` to `Mapped` when `Broadcasted`
-# is known to already be a map expression.
-function map_broadcast_to_mapped(bc::Broadcasted)
-  return Mapped(bc.style, bc.f, bc.args, bc.axes)
-end
+## # Convert `Broadcasted` to `Mapped` when `Broadcasted`
+## # is known to already be a map expression.
+## function map_broadcast_to_mapped(bc::Broadcasted)
+##   return Mapped(bc.style, bc.f, bc.args, bc.axes)
+## end
 
 mapped(f, args...) = Mapped(broadcasted(f, args...))
 
@@ -88,6 +122,6 @@ function Base.copy(m::Mapped)
   return copyto!(similar(m, elt), m)
 end
 Base.copyto!(dest::AbstractArray, m::Mapped) = map!(m.f, dest, m.args...)
-Broadcast.instantiate(m::Mapped) = map_broadcast_to_mapped(instantiate(Broadcasted(m)))
+Broadcast.instantiate(m::Mapped) = Mapped(instantiate(Broadcasted(m)))
 
 end
