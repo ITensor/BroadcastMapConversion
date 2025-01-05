@@ -78,28 +78,90 @@ ExprStyle(bc::Broadcasted) = is_map_expr(bc) ? MapExpr() : NotMapExpr()
 
 abstract type AbstractMapped <: Base.AbstractBroadcasted end
 
+function check_shape(::Type{Bool}, args...)
+  return allequal(axes, args)
+end
+function check_shape(args...)
+  if !check_shape(Bool, args...)
+    throw(DimensionMismatch("Mismatched shapes $(axes.(args))."))
+  end
+  return nothing
+end
+
+# Promote the shape of the arguments to support broadcasting
+# over dimensions by expanding singleton dimensions.
+function promote_shape(ax, args::AbstractArray...)
+  if allequal((ax, axes.(args)...))
+    return args
+  end
+  return promote_shape_tile(ax, args...)
+end
+function promote_shape_tile(common_axes, args::AbstractArray...)
+  return map(arg -> tile_to_shape(arg, common_axes), args)
+end
+
+using BlockArrays: mortar
+using FillArrays: Fill
+
+# Extend by repeating value up to length.
+function extend(t::Tuple, value, length)
+  return ntuple(i -> get(t, i, value), length)
+end
+
+# Handles logic of expanding singleton dimensions
+# to match an array shape in broadcasting.
+function tile_to_shape(a::AbstractArray, ax)
+  axes(a) == ax && return a
+  # Must be one-based for now.
+  @assert all(isone, first.(ax))
+  @assert all(isone, first.(axes(a)))
+  ndim = length(ax)
+  size′ = extend(size(a), 1, ndim)
+  a′ = reshape(a, size′)
+  target_size = length.(ax)
+  fillsize = ntuple(ndim) do dim
+    size′[dim] == target_size[dim] && return 1
+    isone(size′[dim]) && return target_size[dim]
+    return throw(DimensionMismatch("Dimensions $(axes(a)) and $ax don't match."))
+  end
+  return mortar(Fill(a′, fillsize))
+end
+
 struct Mapped{Style<:Union{Nothing,BroadcastStyle},Axes,F,Args<:Tuple} <: AbstractMapped
   style::Style
   f::F
   args::Args
   axes::Axes
+  function Mapped(style, f, args, axes)
+    check_shape(args...)
+    return new{typeof(style),typeof(axes),typeof(f),typeof(args)}(style, f, args, axes)
+  end
 end
 
 function Mapped(bc::Broadcasted)
   return Mapped(ExprStyle(bc), bc)
 end
 function Mapped(::NotMapExpr, bc::Broadcasted)
-  return Mapped(bc.style, map_function(bc), map_args(bc), bc.axes)
+  f = map_function(bc)
+  ax = axes(bc)
+  args = promote_shape(ax, map_args(bc)...)
+  return Mapped(bc.style, f, args, ax)
 end
 function Mapped(::MapExpr, bc::Broadcasted)
-  return Mapped(bc.style, bc.f, bc.args, bc.axes)
+  f = bc.f
+  ax = axes(bc)
+  args = promote_shape(ax, bc.args...)
+  return Mapped(bc.style, f, args, ax)
 end
 
 function Broadcast.Broadcasted(m::Mapped)
   return Broadcasted(m.style, m.f, m.args, m.axes)
 end
 
-mapped(f, args...) = Mapped(broadcasted(f, args...))
+function mapped(f, args...)
+  check_shape(args...)
+  return Mapped(broadcasted(f, args...))
+end
 
 Base.similar(m::Mapped, elt::Type) = similar(Broadcasted(m), elt)
 Base.similar(m::Mapped, elt::Type, ax::Tuple) = similar(Broadcasted(m), elt, ax)
