@@ -32,6 +32,7 @@ using Test: @inferred, @test, @test_throws, @testset
   for (a, b) in (
     (randn(elt, 2, 2), randn(elt, 2)),
     (randn(elt, 2, 2), randn(elt, 1, 2)),
+    (randn(elt, 2, 1), randn(elt, 1, 2)),
     (randn(elt, 2, 2, 2), randn(elt, 2)),
     (randn(elt, 2, 2, 2), randn(elt, 1, 2)),
     (randn(elt, 2, 2, 2), randn(elt, 1, 1, 2)),

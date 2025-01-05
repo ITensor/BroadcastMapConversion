@@ -5,6 +5,7 @@ module BroadcastMapConversion
 
 using Base.Broadcast:
   Broadcast, BroadcastStyle, Broadcasted, broadcasted, combine_eltypes, instantiate
+using Compat: allequal
 
 const WrappedScalarArgs = Union{AbstractArray{<:Any,0},Ref{<:Any}}
 
