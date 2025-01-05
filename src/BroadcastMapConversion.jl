@@ -47,19 +47,19 @@ map_function_arg(a::AbstractArray) = Arg()
 map_function_arg(a) = a
 
 # Evaluate MapFunction
-(f::MapFunction)(args...) = apply(f, args)[1]
-function apply(f::MapFunction, args)
-  args, newargs = apply_tuple(f.args, args)
-  return f.f(args...), newargs
+(f::MapFunction)(args...) = apply_arg(f, args)[1]
+function apply_arg(f::MapFunction, args)
+  mapfunction_args, args′ = apply_args(f.args, args)
+  return f.f(mapfunction_args...), args′
 end
-apply(a::Arg, args::Tuple) = args[1], Base.tail(args)
-apply(a, args) = a, args
-apply_tuple(t::Tuple{}, args) = t, args
-function apply_tuple(t::Tuple, args)
-  t1, newargs1 = apply(t[1], args)
-  ttail, newargs = apply_tuple(Base.tail(t), newargs1)
-  return (t1, ttail...), newargs
+apply_arg(mapfunction_arg::Arg, args) = args[1], Base.tail(args)
+apply_arg(mapfunction_arg, args) = mapfunction_arg, args
+function apply_args(mapfunction_args::Tuple, args)
+  mapfunction_args1, args′ = apply_arg(mapfunction_args[1], args)
+  mapfunction_args_rest, args′′ = apply_args(Base.tail(mapfunction_args), args′)
+  return (mapfunction_args1, mapfunction_args_rest...), args′′
 end
+apply_args(mapfunction_args::Tuple{}, args) = mapfunction_args, args
 
 is_map_expr_or_arg(arg::AbstractArray) = true
 is_map_expr_or_arg(arg::Any) = false
@@ -85,8 +85,6 @@ struct Mapped{Style<:Union{Nothing,BroadcastStyle},Axes,F,Args<:Tuple} <: Abstra
   axes::Axes
 end
 
-# SimpleTraits.trait(Tr{X})
-
 function Mapped(bc::Broadcasted)
   return Mapped(ExprStyle(bc), bc)
 end
@@ -100,12 +98,6 @@ end
 function Broadcast.Broadcasted(m::Mapped)
   return Broadcasted(m.style, m.f, m.args, m.axes)
 end
-
-## # Convert `Broadcasted` to `Mapped` when `Broadcasted`
-## # is known to already be a map expression.
-## function map_broadcast_to_mapped(bc::Broadcasted)
-##   return Mapped(bc.style, bc.f, bc.args, bc.axes)
-## end
 
 mapped(f, args...) = Mapped(broadcasted(f, args...))
 
