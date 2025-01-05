@@ -165,7 +165,7 @@ function mapped(f, args...)
 end
 
 Base.similar(m::Mapped, elt::Type) = similar(Broadcasted(m), elt)
-Base.similar(m::Mapped, elt::Type, ax::Tuple) = similar(Broadcasted(m), elt, ax)
+Base.similar(m::Mapped, elt::Type, ax) = similar(Broadcasted(m), elt, ax)
 Base.axes(m::Mapped) = axes(Broadcasted(m))
 # Equivalent to:
 # map(m.f, m.args...)
