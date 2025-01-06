@@ -21,6 +21,9 @@ using Test: @inferred, @test, @test_throws, @testset
     @test axes(m′) == axes(bc)
     @test copyto!(similar(m, elt), m) ≈ ref
     @test copyto!(similar(m′, elt), m) ≈ ref
+    x = similar(m, Float32, Base.OneTo.((3, 2)))
+    @test x isa Matrix{Float32}
+    @test size(x) == (3, 2)
   end
 
   @test @inferred is_map_expr(
