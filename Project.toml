@@ -1,7 +1,7 @@
 name = "BroadcastMapConversion"
 uuid = "4a4adec5-520f-4750-bb37-d5e66b4ddeb2"
 authors = ["ITensor developers <support@itensor.org> and contributors"]
-version = "0.1.3"
+version = "0.1.4"
 
 [deps]
 BlockArrays = "8e7c35d0-a365-5155-bbbb-fb81a777f24e"
